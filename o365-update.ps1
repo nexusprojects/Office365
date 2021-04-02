@@ -22,7 +22,13 @@ $errormessagecolor = "red"
 $warningmessagecolor = "yellow"
 
 Function test-install($modulename) {
-    if (Get-InstalledModule -Name $modulename) {          ## If module exists then update
+    try {
+        $found = Get-InstalledModule -Name $modulename -erroraction Stop    
+    }
+    catch {
+        $found = $false
+    }
+    if ($found) {          ## If module exists then update
         #get version of the module (selects the first if there are more versions installed)
         $version = (Get-InstalledModule -name $modulename) | Sort-Object Version -Descending  | Select-Object Version -First 1
         #get version of the module in psgallery
@@ -41,7 +47,7 @@ Function test-install($modulename) {
         else {
             Write-Host -foregroundcolor $warningmessagecolor "    Local module $a lower version than Gallery module $b"
             write-host -foregroundcolor $warningmessagecolor "    Will be updated"
-            update-module -name $modulename -force
+            update-module -name $modulename -force -confirm:$false
             Write-Host
         }
     }
@@ -53,7 +59,7 @@ Function test-install($modulename) {
             } until (-not [string]::isnullorempty($result))
             if ($result -eq 'Y' -or $result -eq 'y') {
                 write-host -foregroundcolor $processmessagecolor "Installing module",$modulename
-                install-Module -Name $modulename -Force
+                install-Module -Name $modulename -Force -confirm:$false
             }
         } else {
             write-host -foregroundcolor $processmessagecolor "Installing module",$modulename
@@ -95,6 +101,8 @@ If ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administ
     write-host -foregroundcolor $processmessagecolor "Update Windows Autopilot Module"
     ## will also update dependent AzureAD and Microsoft.Graph.Intune modules
     test-install -modulename WindowsAutoPilotIntune
+    write-host -foregroundcolor $processmessagecolor "Centralised Add-in Deployment"
+    test-install -modulename O365CentralizedAddInDeployment
 }
 Else {
     write-host -foregroundcolor $errormessagecolor "*** ERROR *** - Please re-run PowerShell environment as Administrator`n"
