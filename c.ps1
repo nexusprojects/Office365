@@ -1,5 +1,6 @@
 param(                        
     [switch]$debug = $false,     ## if -debug parameter don't prompt for input
+    [switch]$noupdate = $false,   ## if -noupdate used then module will not be checked for more recent version
     [switch]$noprompt = $false   ## if -noprompt parameter used don't prompt user for input
 )
 <# CIAOPS
@@ -22,6 +23,7 @@ More scripts available by joining http://www.ciaopspatron.com
 $systemmessagecolor = "cyan"
 $processmessagecolor = "green"
 $errormessagecolor = "red"
+$warningmessagecolor = "yellow"
 
 ## If you have running scripts that don't have a certificate, run this command once to disable that level of security
 ## set-executionpolicy -executionpolicy bypass -scope currentuser -force
@@ -36,6 +38,12 @@ Clear-host
 write-host -foregroundcolor $systemmessagecolor "Microsoft Cloud connections menu script started"
 write-host -foregroundcolor cyan -backgroundcolor DarkBlue ">>>>>> Created by www.ciaops.com <<<<<<`n"
 write-host "--- Script to connect to Microsoft Cloud services ---`n"
+if (-not $debug) {
+    Write-host -foregroundcolor $warningmessagecolor "    * use the -debug parameter on the command line to create an execution log file for this script"
+}
+if (-not $noupdate) {
+    write-host -foregroundcolor $warningmessagecolor  "    * use the -noupdate parameter on the command line to prevenet checking for latest module version"
+}
 
 $scripts = @()
 $scripts += [PSCustomObject]@{
@@ -103,6 +111,11 @@ $scripts += [PSCustomObject]@{
     Service = "Add-ins";  
     Module = "O365CentralizedAddInDeployment"  
 }
+$scripts += [PSCustomObject]@{
+    Name = "az-connect-si.ps1";
+    Service = "Azure Security Insights";  
+    Module = "az.securityinsights"  
+}
 if (-not $prompt) {
     try {
         $results = $scripts | select-object service | Sort-Object Service | Out-GridView -PassThru -title "Select services to connect to (Multiple selections permitted) "
@@ -146,7 +159,12 @@ foreach ($result in $results) {
             else {
                 write-host -ForegroundColor $processmessagecolor $script.name,"script found in current directory`n"
             }
-            &$run           ## Run script
+            if ($noupdate) {
+                & $run -noupdate          ## Run script
+            }
+            else {
+                & $run
+            }
         }
     }
 }
