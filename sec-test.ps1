@@ -147,6 +147,14 @@ function displaymenu($mitems) {
         Number = 31;
         Test = "HiveNightmare/CVE-2021-36934"
     }
+    $mitems += [PSCustomObject]@{
+        Number = 32;
+        Test = "MSHTML/CVE-2021-40444"
+    }
+    $mitems += [PSCustomObject]@{
+        Number = 33;
+        Test = "Forms 2.0 HTML controls"
+    }
     return $mitems
 }
 
@@ -209,17 +217,17 @@ function createfile(){
     else {
         write-host -foregroundcolor $errormessagecolor "`nEICAR file creation not detected - test FAILED"
     }
-    $crdtect = $true
+    $crdetect = $true
     try {
         $fileproperty = get-itemproperty .\eicar1.com.txt
     }
     catch {
         write-host -foregroundcolor $processmessagecolor "eicar1.com.txt file not detected - test SUCCEEDED"
-        $crdtect = $false
+        $crdetect = $false
     }
     if ($crdetect) {
         if ($fileproperty.Length -eq 0) {
-            write-host -foregroundcolor $processmessagecolor "eicar1.com.txt detected with file size = 0 - test SUUCCEEDED"
+            write-host -foregroundcolor $processmessagecolor "eicar1.com.txt detected with file size = 0 - test SUCCEEDED"
             write-host -foregroundcolor $processmessagecolor "Removing file .\EICAR1.COM.TXT"
             Remove-Item .\eicar1.com.txt
         }
@@ -261,9 +269,14 @@ function processdump() {
     $procdump = $true
     if (-not $result) {
         write-host -foregroundcolor $warningmessagecolor "SysInternals procdump.exe not found in current directory"
-        do {
-            $result = Read-host -prompt "Download SysInternals procdump (Y/N)?"
-        } until (-not [string]::isnullorempty($result))
+        if ($noprompt) {        # if running the script with no prompting
+            do {
+                $result = Read-host -prompt "Download SysInternals procdump (Y/N)?"
+            } until (-not [string]::isnullorempty($result))
+        }
+        else {
+            $result = 'Y'
+        }
         if ($result -eq 'Y' -or $result -eq 'y') {
             write-host -foregroundcolor $processmessagecolor "Download procdump.zip to current directory"
             invoke-webrequest -uri https://download.sysinternals.com/files/Procdump.zip -outfile .\procdump.zip
@@ -1120,6 +1133,34 @@ function hivevul () {
     }
 }
 
+function mshtmlvul() {
+    write-host -ForegroundColor white -backgroundcolor blue "`n--- 32. MSHTML remote code execution ---"
+    write-host -foregroundcolor $processmessagecolor "Download test Word document to current directory"
+    Invoke-WebRequest -Uri https://github.com/directorcia/Office365/raw/master/example/WebBrowser.docx -OutFile .\webbrowser.docx
+    write-host -foregroundcolor $processmessagecolor "Open document using Word"
+    Start-Process winword.exe -ArgumentList ".\webbrowser.docx"
+    write-host "`n1. Click on the Totally Safe.txt embedded item at top of document"
+    write-host "2. Ensure that CALC.exe cannot be run in any way" 
+    write-host "3. Close Word once complete.`n"
+    pause
+    write-host -foregroundcolor $processmessagecolor "`nDelete webbrowser.docx"
+    remove-item .\webbrowser.docx  
+}
+
+function formshtml() {
+    write-host -ForegroundColor white -backgroundcolor blue "`n--- 33. Forms HTML controls remote code execution ---"
+    write-host -foregroundcolor $processmessagecolor "Download test Word document to current directory"
+    Invoke-WebRequest -Uri https://github.com/directorcia/Office365/raw/master/example/Forms.HTML.docx -OutFile .\forms.html.docx
+    write-host -foregroundcolor $processmessagecolor "Open document using Word"
+    Start-Process winword.exe -ArgumentList ".\forms.html.docx"
+    write-host "`n1. Click on the embedded item at top of document"
+    write-host "2. Ensure that CALC.exe cannot be run in any way" 
+    write-host "3. Close Word once complete.`n"
+    pause
+    write-host -foregroundcolor $processmessagecolor "`nDelete forms.html.docx"
+    remove-item .\forms.html.docx  
+}
+
 <#          Main                #>
 Clear-Host
 if ($debug) {       # If -debug command line option specified record log file in parent
@@ -1188,6 +1229,8 @@ switch ($results.number) {
     29  {rundll}
     30  {mimispool}
     31  {hivevul}
+    32  {mshtmlvul}
+    33  {formshtml}
 }
 
 write-host -foregroundcolor $systemmessagecolor "`nSecurity test script completed"

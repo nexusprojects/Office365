@@ -16,50 +16,75 @@ More scripts available by joining http://www.ciaopspatron.com
 $systemmessagecolor = "cyan"
 $processmessagecolor = "green"
 $errormessagecolor = "red"
+$warningmessagecolor = "yellow"
 
 ## If you have running scripts that don't have a certificate, run this command once to disable that level of security
 ## set-executionpolicy -executionpolicy bypass -scope currentuser -force
 
 Clear-Host
-
+if ((get-host).name -match "ISE") {Write-host "`n`n`n`n`n`n`n`n`n"}     # move text down for ISE where dialog will hide
 write-host -foregroundcolor $systemmessagecolor "Start Script`n"
 
 $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 If ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    write-host -foregroundcolor $processmessagecolor "NuGet provider"
-    Install-PackageProvider -Name NuGet -Force -confirm:$false
-    write-host -foregroundcolor $processmessagecolor "Install Azure AD module"
+    write-host -ForegroundColor $processmessagecolor "Checking PowerShell Execution Policy"
+    $result = Get-ExecutionPolicy -Scope CurrentUser
+    if ($result -ne "Bypass") {
+        write-host -ForegroundColor $warningmessagecolor " - [Warning] - Currentuser not set to bypass to allow scripts to run"
+        write-host -ForegroundColor $processmessagecolor " - Setting Currentuser to bypass to allow scripts to run"        
+        set-executionpolicy -executionpolicy bypass -scope currentuser -force
+    }
+    else {
+        write-host -ForegroundColor $processmessagecolor " - Currentuser is set to bypass to allow scripts to run"
+    }
+    write-host -foregroundcolor $processmessagecolor "`n(1 of 12) Install NuGet provider"
+    Install-PackageProvider -Name NuGet -Force -confirm:$false | Out-Null
+    write-host -foregroundcolor $processmessagecolor "(2 of 12) Install Azure AD module"
     Install-Module -Name AzureAD -force -confirm:$false
-    write-host -foregroundcolor $processmessagecolor "Install Azure Information Protection module"
-    Install-module -name aipservice -Force -confirm:$false
+    write-host -foregroundcolor $processmessagecolor "(3 of 12) Install Azure Information Protection module"
 ##    Install-Module -Name AADRM -force                       ## Support for the AADRM module ends July 15, 2020
-    write-host -foregroundcolor $processmessagecolor "Install Teams Module"
+    $aadrmcheck = get-module -listavailable -name aadrm
+    if ($aadrmcheck) {
+        write-host -foregroundcolor $warningmessagecolor " - [Warning] Older module Azure AD Rights management module (AADRM) is still installed"
+        write-host -foregroundcolor $processmessagecolor " - Uninstalling AADRM module as support ended July 15, 2020 "
+        uninstall-module aadrm -force -confirm:$false
+        write-host -foregroundcolor $processmessagecolor " - New Azure Information Protection module will now be installed"
+    }
+    Install-module -name aipservice -Force -confirm:$false
+
+    write-host -foregroundcolor $processmessagecolor "(4 of 12) Install Teams Module"
     Install-Module -Name MicrosoftTeams -Force -confirm:$false
-    write-host -foregroundcolor $processmessagecolor "Install SharePoint Online module"
+    write-host -foregroundcolor $processmessagecolor "(5 of 12) Install SharePoint Online module"
     Install-Module -Name Microsoft.Online.SharePoint.PowerShell -force -confirm:$false
-    write-host -foregroundcolor $processmessagecolor "Install Microsoft Online module"
+    write-host -foregroundcolor $processmessagecolor "(6 of 12) Install Microsoft Online module"
     Install-Module -Name MSOnline -force -confirm:$false
-    write-host -foregroundcolor $processmessagecolor "Install Exchange Online V2 module"
+    write-host -foregroundcolor $processmessagecolor "(7 of 12) Install Exchange Online module"
     Install-Module PowershellGet -Force -confirm:$false
     Install-Module -Name ExchangeOnlineManagement -force -confirm:$false
-    write-host -foregroundcolor $processmessagecolor "Install Azure module"
+    write-host -foregroundcolor $processmessagecolor "(8 of 12) Install Azure module"
     ## Old Azure module
     ## Install-Module -name AzureRM -Force
     ## New Az module
     Install-Module -name Az -force -confirm:$false
-    write-host -foregroundcolor $processmessagecolor "Install SharePoint PnP module"
+    write-host -foregroundcolor $processmessagecolor "(9 of 12) Install SharePoint PnP module"
+    $pnpcheck = get-module -listavailable -name SharePointPnPPowerShellOnline
+    if ($pnpcheck) {
+        write-host -foregroundcolor $warningmessagecolor " - [Warning] Older SharePoint PnP module is still installed"
+        write-host -foregroundcolor $processmessagecolor " - Uninstalling older SharePoint PnP module"
+        uninstall-module SharePointPnPPowerShellOnline -allversions -force -confirm:$false
+        write-host -foregroundcolor $processmessagecolor " - New SharePoint PnP module will now be installed"
+    }
     Install-Module PnP.PowerShell -Force -confirm:$false
-    write-host -foregroundcolor $processmessagecolor "Install Microsoft Graph Module"
+    write-host -foregroundcolor $processmessagecolor "(10 of 12) Install Microsoft Graph Module"
     Install-Module -Name Microsoft.Graph -force -confirm:$false
-    write-host -foregroundcolor $processmessagecolor "Install Windows Autopilot Module"
+    write-host -foregroundcolor $processmessagecolor "(11 of 12) Install Windows Autopilot Module"
     ## will also update dependent AzureAD and Microsoft.Graph.Intune modules
     Install-Module -Name WindowsAutoPilotIntune -force -confirm:$false
-    write-host -foregroundcolor $processmessagecolor "Install Centralised Add-in Deployment"
-    Install-module -name O365CentralizedAddInDeployment -confirm:$false
+    write-host -foregroundcolor $processmessagecolor "(12 of 12) Install Centralised Add-in Deployment"
+    Install-module -name O365CentralizedAddInDeployment -force -confirm:$false
 }
 else {
     write-host -foregroundcolor $errormessagecolor "*** ERROR *** - Please re-run PowerShell environment as Administrator`n"
 }
-
 
 write-host -foregroundcolor $systemmessagecolor "Script completed`n"
