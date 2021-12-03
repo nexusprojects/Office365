@@ -95,6 +95,7 @@ https://security.microsoft.com/dkimv2 - DKIM
 https://security.microsoft.com/safeattachmentv2 - Safe Attachments
 https://security.microsoft.com/safelinksv2 - Safe Links
 https://security.microsoft.com/restrictedusers - Action Center
+https://security.microsoft.com/cloudapps/app-governance - App governance
 
 ## Azure
 
@@ -174,6 +175,7 @@ https://twitter.com/AndroidAtMsft - Andoid at Microsoft
 https://twitter.com/windowsATP - Microsoft Defender ATP
 https://twitter.com/MicrosoftGraph - Microsoft Graph
 https://twitter.com/W365community - Windows 365 community
+https://twitter.com/msftadoption - Microsoft 365 Adoption resources
 
 ## Podcasts
 
